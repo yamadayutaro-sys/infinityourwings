@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Retro Space Shooter</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; touch-action: none; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 10px; left: 10px; color: #fff; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="ui">SCORE: <span id="score">0</span> | SPEED: <span id="speed">1</span></div>
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const speedEl = document.getElementById('speed');
+
+// --- ゲーム設定 ---
+let score = 0;
+let gameActive = true;
+const player = { x: 50, y: 0, w: 30, h: 15, speed: 4, color: '#0af' };
+const bullets = [];
+const enemies = [];
+const particles = [];
+const powerUps = [];
+
+// 入力状態
+const keys = {};
+let touchX = null;
+let touchY = null;
+
+// --- 初期化 ---
+function init() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    player.y = canvas.height / 2;
+}
+
+// --- イベントリスナー ---
+window.addEventListener('keydown', e => keys[e.code] = true);
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+// スマホ・タッチ操作
+window.addEventListener('touchstart', e => {
+    touchX = e.touches[0].clientX;
+    touchY = e.touches[0].clientY;
+}, { passive: false });
+
+window.addEventListener('touchmove', e => {
+    if (touchX === null) return;
+    const dx = e.touches[0].clientX - touchX;
+    const dy = e.touches[0].clientY - touchY;
+    player.x = Math.max(0, Math.min(canvas.width - player.w, player.x + dx));
+    player.y = Math.max(0, Math.min(canvas.height - player.h, player.y + dy));
+    touchX = e.touches[0].clientX;
+    touchY = e.touches[0].clientY;
+    e.preventDefault();
+}, { passive: false });
+
+// --- ゲームロジック ---
+function spawnEnemy() {
+    if (Math.random() < 0.05) {
+        const isRed = Math.random() < 0.2; // 赤い敵はパワーアップを出す
+        enemies.push({
+            x: canvas.width,
+            y: Math.random() * (canvas.height - 30),
+            w: 25,
+            h: 25,
+            speed: 3 + Math.random() * 2,
+            hp: 1,
+            color: isRed ? '#f00' : '#f80',
+            type: isRed ? 'red' : 'normal'
+        });
+    }
+}
+
+function update() {
+    if (!gameActive) return;
+
+    // 自機の移動 (PC)
+    if (keys['ArrowUp'] && player.y > 0) player.y -= player.speed;
+    if (keys['ArrowDown'] && player.y < canvas.height - player.h) player.y += player.speed;
+    if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
+    if (keys['ArrowRight'] && player.x < canvas.width / 2) player.x += player.speed;
+
+    // ショット (PCはSpace、スマホは自動)
+    if (keys['Space'] || touchX !== null) {
+        if (Date.now() % 10 < 2) { // 簡易的な連射制限
+            bullets.push({ x: player.x + player.w, y: player.y + player.h/2, r: 3, speed: 8 });
+        }
+    }
+
+    // 弾の移動
+    bullets.forEach((b, i) => {
+        b.x += b.speed;
+        if (b.x > canvas.width) bullets.splice(i, 1);
+    });
+
+    // 敵の移動
+    enemies.forEach((en, i) => {
+        en.x -= en.speed;
+        // 自機との衝突
+        if (player.x < en.x + en.w && player.x + player.w > en.x && player.y < en.y + en.h && player.y + player.h > en.y) {
+            gameActive = false;
+            alert("GAME OVER\nSCORE: " + score);
+            location.reload();
+        }
+        if (en.x < -en.w) enemies.splice(i, 1);
+    });
+
+    // パワーアップの移動
+    powerUps.forEach((p, i) => {
+        p.x -= 2;
+        if (player.x < p.x + p.w && player.x + player.w > p.x && player.y < p.y + p.h && player.y + player.h > p.y) {
+            player.speed += 0.5;
+            speedEl.innerText = (player.speed - 3).toFixed(1);
+            powerUps.splice(i, 1);
+        }
+    });
+
+    // 当たり判定 (弾 vs 敵)
+    bullets.forEach((b, bi) => {
+        enemies.forEach((en, ei) => {
+            if (b.x > en.x && b.x < en.x + en.w && b.y > en.y && b.y < en.y + en.h) {
+                if (en.type === 'red') {
+                    powerUps.push({ x: en.x, y: en.y, w: 20, h: 20 });
+                }
+                enemies.splice(ei, 1);
+                bullets.splice(bi, 1);
+                score += 100;
+                scoreEl.innerText = score;
+            }
+        });
+    });
+
+    spawnEnemy();
+}
+
+// --- 描画 ---
+function draw() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 星の背景 (簡易)
+    ctx.fillStyle = '#fff';
+    for(let i=0; i<20; i++) {
+        ctx.fillRect((Date.now()/20 + i*100) % canvas.width, (i*77) % canvas.height, 2, 2);
+    }
+
+    // 自機 (グラディウスのビックバイパー風)
+    ctx.fillStyle = player.color;
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.lineTo(player.x + player.w, player.y + player.h/2);
+    ctx.lineTo(player.x, player.y + player.h);
+    ctx.fill();
+
+    // 弾
+    ctx.fillStyle = '#ff0';
+    bullets.forEach(b => ctx.fillRect(b.x, b.y-2, 10, 4));
+
+    // 敵
+    enemies.forEach(en => {
+        ctx.fillStyle = en.color;
+        ctx.fillRect(en.x, en.y, en.w, en.h);
+    });
+
+    // パワーアップカプセル
+    powerUps.forEach(p => {
+        ctx.fillStyle = '#f0f';
+        ctx.beginPath();
+        ctx.arc(p.x + 10, p.y + 10, 10, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    update();
+    requestAnimationFrame(draw);
+}
+
+init();
+draw();
+window.onresize = init;
+</script>
+</body>
+</html>
