@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>円形ルーレットくじ</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            background-color: #f7f9fc;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* 案内テキストのスタイル */
+        #instruction {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #27ae60;
+            margin-bottom: 20px;
+            height: 24px; /* テキストが消えてもレイアウトがずれないように高さを固定 */
+        }
+
+        /* ルーレット全体のコンテナ */
+        .roulette-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin-bottom: 30px;
+        }
+
+        /* 逆三角形の針（ポインター） */
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid #f1c40f;
+            z-index: 10;
+            filter: drop-shadow(0 3px 3px rgba(0,0,0,0.3));
+        }
+
+        /* 円形ルーレット本体 */
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                #e74c3c 0deg 36deg,   
+                #34495e 36deg 108deg, 
+                #2c3e50 108deg 180deg,
+                #34495e 180deg 252deg,
+                #2c3e50 252deg 324deg,
+                #34495e 324deg 360deg
+            );
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            transition: transform 3.5s cubic-bezier(0.1, 0.7, 0.1, 1);
+        }
+
+        /* 結果テキストのスタイル */
+        #result-text {
+            font-size: 1.1rem;
+            font-weight: bold;
+            min-height: 80px;
+            color: #34495e;
+            text-align: center;
+            line-height: 1.6;
+            opacity: 0; /* 最初は透明にしておく */
+            transition: opacity 0.5s ease; /* フワッと表示させるアニメーション */
+        }
+
+        /* 当たり・ハズレのメイン文字を大きくする用のクラス */
+        .highlight {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="instruction">ルーレットが回っています...</div>
+
+    <div class="roulette-container">
+        <div class="pointer"></div>
+        <div class="wheel" id="wheel"></div>
+    </div>
+
+    <div id="result-text"></div>
+
+    <script>
+        // ページが読み込まれたら自動的に実行
+        window.onload = function() {
+            // ページを開いてから0.5秒後にルーレットを回し始める（少し間を置くことで自然な演出に）
+            setTimeout(spinWheel, 500);
+        };
+
+        function spinWheel() {
+            const wheel = document.getElementById('wheel');
+            const resultText = document.getElementById('result-text');
+            const instruction = document.getElementById('instruction');
+
+            // 1. 確率判定（10%で当たり）
+            const randomNum = Math.random();
+            const isWin = randomNum < 0.1;
+
+            let targetAngle = 0;
+
+            if (isWin) {
+                // 当たりの場合：5度〜31度の間でランダム停止
+                targetAngle = Math.floor(Math.random() * 27) + 5;
+            } else {
+                // ハズレの場合：40度〜350度の間でランダム停止
+                targetAngle = Math.floor(Math.random() * 311) + 40;
+            }
+
+            // 2. 回転角度の計算
+            const rotationToAdd = 360 - targetAngle;
+            // 最低5回転（1800度）させる
+            const spinAmount = (5 * 360) + rotationToAdd;
+
+            // 3. ルーレットを回転させる
+            wheel.style.transform = `rotate(${spinAmount}deg)`;
+
+            // 4. 回転終了後に結果を表示
+            setTimeout(() => {
+                // 「回っています...」の案内を消す
+                instruction.innerHTML = ""; 
+                
+                if (isWin) {
+                    resultText.innerHTML = "<span class='highlight'>🎉 あたり！ 🎉</span>景品プレゼント！<br>スタッフにこの画面をお見せください！";
+                    resultText.style.color = "#e74c3c";
+                } else {
+                    resultText.innerHTML = "<span class='highlight'>😢 ハズレ！残念！</span>でも参加賞がありますので<br>この画面をスタッフにお見せください！";
+                    resultText.style.color = "#34495e";
+                }
+                
+                // 結果のテキストをフワッと表示
+                resultText.style.opacity = 1; 
+            }, 3500); // CSSのtransition時間(3.5s)と合わせる
+        }
+    </script>
+
+</body>
+</html>
