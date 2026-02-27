@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>豪華景品ルーレットくじ</title>
+    <title>景品ルーレットくじ</title>
     <style>
         body {
             display: flex;
@@ -22,7 +22,7 @@
         #instruction {
             font-size: 1.2rem;
             font-weight: bold;
-            color: #333;
+            color: #27ae60;
             margin-bottom: 20px;
             height: 24px;
         }
@@ -55,13 +55,13 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            /* 確率に合わせて角度と色を設定 */
+            /* 各景品の確率に合わせて角度と色を設定 */
             background: conic-gradient(
-                #e74c3c 0deg 36deg,     /* 1等(10%): 赤 */
-                #f39c12 36deg 72deg,    /* 2等(10%): オレンジ */
-                #2ecc71 72deg 144deg,   /* 3等(20%): 緑 */
-                #3498db 144deg 216deg,  /* 4等(20%): 青 */
-                #9b59b6 216deg 360deg   /* 参加賞(40%): 紫 */
+                #e74c3c 0deg 18deg,     /* 1等: お米 (5% = 18度) 赤 */
+                #e67e22 18deg 54deg,    /* 2等: シール (10% = 36度) オレンジ */
+                #2ecc71 54deg 126deg,   /* 3等: 日用品 (20% = 72度) 緑 */
+                #3498db 126deg 198deg,  /* 4等: おもちゃ (20% = 72度) 青 */
+                #34495e 198deg 360deg   /* 参加賞 (45% = 162度) 紺色 */
             );
             box-shadow: 0 10px 25px rgba(0,0,0,0.15);
             transition: transform 3.5s cubic-bezier(0.1, 0.7, 0.1, 1);
@@ -72,14 +72,13 @@
             font-size: 1.1rem;
             font-weight: bold;
             min-height: 80px;
-            color: #34495e;
             text-align: center;
             line-height: 1.6;
-            opacity: 0;
+            opacity: 0; 
             transition: opacity 0.5s ease;
         }
 
-        /* 当たりメイン文字を大きくする用のクラス */
+        /* 当たりのメイン文字を大きくする用のクラス */
         .highlight {
             font-size: 1.8rem;
             display: block;
@@ -100,6 +99,7 @@
 
     <script>
         window.onload = function() {
+            // ページを開いてから0.5秒後に自動スタート
             setTimeout(spinWheel, 500);
         };
 
@@ -108,56 +108,61 @@
             const resultText = document.getElementById('result-text');
             const instruction = document.getElementById('instruction');
 
-            // 1. 確率判定 (0.0 〜 0.999...)
-            const randomNum = Math.random();
-            let targetAngle = 0;
-            let resultData = {};
+            // 1. 確率判定のためのランダムな数値 (0.00 〜 0.999...)
+            const r = Math.random();
 
-            // 境界の線ギリギリに止まらないように、各エリアの内側数度をランダムな停止位置に設定
-            if (randomNum < 0.10) {
-                // 1等：お米（10%） -> 0度〜36度のエリア
-                targetAngle = Math.floor(Math.random() * 32) + 2; 
-                resultData = { text: "🎉 1等！お米 🎉", color: "#e74c3c" };
-            } 
-            else if (randomNum < 0.20) {
-                // 2等：ぷっくりシール（10%） -> 36度〜72度のエリア
-                targetAngle = Math.floor(Math.random() * 32) + 38;
-                resultData = { text: "✨ 2等！ぷっくりシール ✨", color: "#f39c12" };
-            } 
-            else if (randomNum < 0.40) {
-                // 3等：日用品（20%） -> 72度〜144度のエリア
-                targetAngle = Math.floor(Math.random() * 68) + 74;
-                resultData = { text: "🎈 3等！日用品 🎈", color: "#2ecc71" };
-            } 
-            else if (randomNum < 0.60) {
-                // 4等：おもちゃ（20%） -> 144度〜216度のエリア
-                targetAngle = Math.floor(Math.random() * 68) + 146;
-                resultData = { text: "🧸 4等！おもちゃ 🧸", color: "#3498db" };
-            } 
-            else {
-                // 参加賞（40%） -> 216度〜360度のエリア
-                targetAngle = Math.floor(Math.random() * 140) + 218;
-                resultData = { text: "👏 参加賞！ 👏", color: "#9b59b6" };
+            let targetAngle = 0;
+            let prizeText = "";
+            let prizeColor = "";
+
+            // 2. 確率に応じた結果の割り当てと、針が止まる角度の決定
+            // ※境界線ギリギリに止まらないよう、各エリアの内側でランダムに止まるように計算しています
+            
+            if (r < 0.05) {
+                // 1等：お米（5%）: 0度〜18度
+                targetAngle = Math.floor(Math.random() * 15) + 2; 
+                prizeText = "<span class='highlight'>🎉 1等 お米！ 🎉</span>おめでとうございます！<br>スタッフにこの画面をお見せください！";
+                prizeColor = "#e74c3c"; // 赤
+                
+            } else if (r < 0.15) {
+                // 2等：ぷっくりシール（10%）: 18度〜54度
+                targetAngle = Math.floor(Math.random() * 33) + 20;
+                prizeText = "<span class='highlight'>✨ 2等 ぷっくりシール！ ✨</span>おめでとうございます！<br>スタッフにこの画面をお見せください！";
+                prizeColor = "#e67e22"; // オレンジ
+                
+            } else if (r < 0.35) {
+                // 3等：日用品（20%）: 54度〜126度
+                targetAngle = Math.floor(Math.random() * 69) + 56;
+                prizeText = "<span class='highlight'>🎊 3等 日用品！ 🎊</span>おめでとうございます！<br>スタッフにこの画面をお見せください！";
+                prizeColor = "#2ecc71"; // 緑
+                
+            } else if (r < 0.55) {
+                // 4等：おもちゃ（20%）: 126度〜198度
+                targetAngle = Math.floor(Math.random() * 69) + 128;
+                prizeText = "<span class='highlight'>🎈 4等 おもちゃ！ 🎈</span>おめでとうございます！<br>スタッフにこの画面をお見せください！";
+                prizeColor = "#3498db"; // 青
+                
+            } else {
+                // 参加賞（45%）: 198度〜360度
+                targetAngle = Math.floor(Math.random() * 159) + 200;
+                prizeText = "<span class='highlight'>👏 参加賞！ 👏</span>ありがとうございます！<br>スタッフにこの画面をお見せください！";
+                prizeColor = "#34495e"; // 紺色
             }
 
-            // 2. 回転角度の計算
+            // 3. 回転角度の計算（最低5回転させる）
             const rotationToAdd = 360 - targetAngle;
-            const spinAmount = (5 * 360) + rotationToAdd; // 最低5回転
+            const spinAmount = (5 * 360) + rotationToAdd;
 
-            // 3. ルーレットを回転させる
+            // 4. ルーレットを回転させる
             wheel.style.transform = `rotate(${spinAmount}deg)`;
 
-            // 4. 回転終了後に結果を表示
+            // 5. 回転終了後に結果を表示
             setTimeout(() => {
-                instruction.innerHTML = ""; 
+                instruction.innerHTML = ""; // 「回っています...」を消す
                 
-                // 結果に応じてテキストの色と内容を動的に変更
-                resultText.innerHTML = `
-                    <span class='highlight' style='color:${resultData.color}'>${resultData.text}</span>
-                    景品をお渡しします！<br>スタッフにこの画面をお見せください！
-                `;
-                
-                resultText.style.opacity = 1; 
+                resultText.innerHTML = prizeText;
+                resultText.style.color = prizeColor;
+                resultText.style.opacity = 1; // フワッと表示
             }, 3500);
         }
     </script>
